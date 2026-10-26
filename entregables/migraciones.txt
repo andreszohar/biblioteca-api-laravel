@@ -1,0 +1,1 @@
+php artisan make:migration create_autores_table; Start-Sleep 2; php artisan make:migration create_libros_table; Start-Sleep 2; php artisan make:migration create_autor_libro_table; Start-Sleep 2; php artisan make:migration create_prestamos_table

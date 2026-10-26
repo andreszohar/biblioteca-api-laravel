@@ -1,0 +1,391 @@
+{
+  "info": {
+    "_postman_id": "ef002642-fe82-449e-a63f-625c7a1c3027",
+    "name": "Biblioteca API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12794126"
+  },
+  "item": [
+    {
+      "name": "login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const respuesta = pm.response.json();\r\n\r\nif (pm.response.code === 200 && respuesta.data && respuesta.data.token) {\r\n    pm.environment.set(\"token\", respuesta.data.token);\r\n}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"admin@biblioteca.test\",\r\n    \"password\": \"password\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "login credenciales invalidas",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const respuesta = pm.response.json();\r\n\r\nif (pm.response.code === 200 && respuesta.data && respuesta.data.token) {\r\n    pm.environment.set(\"token\", respuesta.data.token);\r\n}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"unadminraro@biblioteca.test\",\r\n    \"password\": \"password\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/login",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Listar libros",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/libros",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "libros"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Listar libros error",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/libros",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "libros"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Buscar libros con filtros",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/libros?titulo=a&anio=2020&per_page=5",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "libros"
+          ],
+          "query": [
+            {
+              "key": "titulo",
+              "value": "a"
+            },
+            {
+              "key": "anio",
+              "value": "2020"
+            },
+            {
+              "key": "per_page",
+              "value": "5"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear Libro",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"titulo\": \"Cien años de soledad\",\r\n    \"isbn\": \"978-0-06-088328-7\",\r\n    \"anio_publicacion\": 1967,\r\n    \"numero_paginas\": 471,\r\n    \"descripcion\": \"Novela de realismo mágico.\",\r\n    \"stock_disponible\": 5,\r\n    \"autores\": [1, 2]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/libros",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "libros"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear Libro sin enviar",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"titulo\": \"Cien años de soledad la revolucion de las maquinas\",\r\n    \"isbn\": \"978-0-06-088834-7\",\r\n    \"anio_publicacion\": 1967,\r\n    \"numero_paginas\": 471,\r\n    \"descripcion\": \"Novela de realismo mágico.\",\r\n    \"stock_disponible\": 5,\r\n    \"autores\": [1, 2]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/libros",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "libros"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Ver libro",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/libros/22",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "libros",
+            "22"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Actualizar libro",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"titulo\": \"Cien años de soledad (edición actualizada)\",\r\n    \"isbn\": \"978-0-06-088234-7\",\r\n    \"anio_publicacion\": 1967,\r\n    \"numero_paginas\": 480,\r\n    \"descripcion\": \"Novela de realismo mágico, edición revisada.\",\r\n    \"stock_disponible\": 8,\r\n    \"autores\": [1]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/libros/22",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "libros",
+            "22"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Eliminar libro",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/libros/22",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "libros",
+            "22"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Listar préstamos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/prestamos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "prestamos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear préstamo",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"libro_id\": 19,\r\n    \"user_id\": 15\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/prestamos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "prestamos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear préstamo - límite 3",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"libro_id\": 2,\r\n    \"user_id\": 2\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/prestamos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "prestamos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Crear préstamo - sin stock",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"libro_id\": 1,\r\n    \"user_id\": 15\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/prestamos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "prestamos"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Devolver Prestamo",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/prestamos/11/devolver",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "prestamos",
+            "11",
+            "devolver"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  }
+}
