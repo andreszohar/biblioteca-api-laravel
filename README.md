@@ -80,3 +80,18 @@ La petición `Crear Libro` solo da 201 una vez por ISBN; cambia el ISBN para rep
 
 La carpeta `entregables` incluye el script SQL, el diagrama ER, la colección de Postman,
 su environment y las respuestas teóricas.
+
+
+## Página web
+
+Con el servidor encendido (`php artisan serve`), abre `http://127.0.0.1:8000`.
+
+- Login con `admin@biblioteca.test` / `password`.
+- Resumen con estadísticas básicas (libros, disponibles, préstamos activos y vencidos).
+- Lista de libros con búsqueda en tiempo real por título.
+- Formulario para crear un préstamo, con validación del lado cliente.
+- Mensajes de éxito y de error a partir de las respuestas de la API.
+
+Archivos: `resources/views/biblioteca.blade.php`, `public/css/biblioteca.css` y `public/js/`
+(`api.js`, `libros.js`, `prestamos.js`, `dashboard.js`, `main.js`). Usa JavaScript puro y `fetch`.
+El token de Sanctum se guarda en `sessionStorage`, así que se borra al cerrar la pestaña.
