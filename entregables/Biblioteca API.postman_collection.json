@@ -2,6 +2,7 @@
   "info": {
     "_postman_id": "ef002642-fe82-449e-a63f-625c7a1c3027",
     "name": "Biblioteca API",
+    "description": "API REST del sistema de gestión de biblioteca (Laravel, PostgreSQL, Sanctum).\n\nVariables del environment \"Biblioteca Local\":\n\n- base_url: [http://127.0.0.1:8000/api](http://127.0.0.1:8000/api)\n    \n- token: se llena solo al ejecutar la petición \"login\".\n    \n\nAutenticación: todas las rutas, excepto login, exigen Authorization: Bearer {{token}}.  \nUsuario de prueba: [admin@biblioteca.test](https://mailto:admin@biblioteca.test) / password\n\nCódigos de respuesta:\n\n- 200 OK: consulta o actualización correcta.\n    \n- 201 Created: recurso creado.\n    \n- 401 Unauthorized: sin token o credenciales inválidas.\n    \n- 404 Not Found: el recurso no existe o fue eliminado (soft delete).\n    \n- 409 Conflict: choque con el estado actual (autor con libros).\n    \n- 422 Unprocessable Content: datos inválidos o regla de negocio incumplida  \n    (sin stock, máximo 3 préstamos activos, préstamo ya devuelto).\n    \n- 429 Too Many Requests: más de 5 intentos de login por minuto.\n    \n\nOrden sugerido: login, Listar libros, Crear Libro, Ver libro, Actualizar libro,  \nEliminar libro, Listar préstamos, Crear préstamo, Devolver Prestamo.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "12794126"
   },
@@ -14,7 +15,7 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const respuesta = pm.response.json();\r\n\r\nif (pm.response.code === 200 && respuesta.data && respuesta.data.token) {\r\n    pm.environment.set(\"token\", respuesta.data.token);\r\n}"
+              "const respuesta = pm.response.json();\r\n\r\nif (pm.response.code === 200 && respuesta.data && respuesta.data.token) {\r\n    pm.environment.set(\"token\", respuesta.data.token);\r\n}\r\npm.test(\"Login responde 200 OK\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"Devuelve un token Bearer\", function () {\r\n    const cuerpo = pm.response.json();\r\n    pm.expect(cuerpo.data).to.have.property(\"token\");\r\n    pm.expect(cuerpo.data.token_type).to.eql(\"Bearer\");\r\n});\r\n\r\npm.test(\"No expone la contraseña del usuario\", function () {\r\n    const cuerpo = pm.response.json();\r\n    pm.expect(cuerpo.data.usuario).to.not.have.property(\"password\");\r\n});"
             ]
           }
         }
@@ -39,9 +40,79 @@
           "path": [
             "login"
           ]
-        }
+        },
+        "description": "Inicia sesión y devuelve un token Sanctum.\n\nBody (JSON): email, password.\n\nRespuestas:\n\n- 200: devuelve el token. El script de la petición lo guarda en {{token}}.\n    \n- 401: credenciales inválidas (mensaje genérico, no revela si falló el email o la contraseña).\n    \n- 422: faltan campos o el formato es inválido.\n    \n- 429: más de 5 intentos por minuto."
       },
-      "response": []
+      "response": [
+        {
+          "name": "login",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"admin@biblioteca.test\",\r\n    \"password\": \"password\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Host",
+              "value": "127.0.0.1:8000"
+            },
+            {
+              "key": "Connection",
+              "value": "close"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "PHP/8.5.12"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, private"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 27 Oct 2026 00:10:23 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "X-RateLimit-Limit",
+              "value": "5"
+            },
+            {
+              "key": "X-RateLimit-Remaining",
+              "value": "4"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"message\": \"Inicio de sesión exitoso.\",\n  \"data\": {\n    \"token\": \"1|TOKEN_DE_EJEMPLO\",\n    \"token_type\": \"Bearer\",\n    \"usuario\": {\n      \"id\": 1,\n      \"nombre\": \"Administrador\",\n      \"email\": \"admin@biblioteca.test\",\n      \"telefono\": \"3790723305\",\n      \"fecha_registro\": \"2025-06-20\",\n      \"estado\": \"activo\"\n    }\n  }\n}"
+        }
+      ]
     },
     {
       "name": "login credenciales invalidas",
@@ -51,7 +122,7 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const respuesta = pm.response.json();\r\n\r\nif (pm.response.code === 200 && respuesta.data && respuesta.data.token) {\r\n    pm.environment.set(\"token\", respuesta.data.token);\r\n}"
+              "pm.test(\"Credenciales inválidas responde 401\", function () {\r\n    pm.response.to.have.status(401);\r\n});\r\n\r\npm.test(\"Mensaje genérico, sin revelar si el correo existe\", function () {\r\n    const cuerpo = pm.response.json();\r\n    pm.expect(cuerpo.message).to.eql(\"Credenciales inválidas.\");\r\n});"
             ]
           }
         }
@@ -76,12 +147,24 @@
           "path": [
             "login"
           ]
-        }
+        },
+        "description": "Caso de error: login con contraseña incorrecta.  \nRespuesta esperada: 401 con mensaje genérico, sin revelar si falló el email o la contraseña."
       },
       "response": []
     },
     {
       "name": "Listar libros",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Responde 200 OK\", function () {\r\n    pm.response.to.have.status(200);\r\n});\r\n\r\npm.test(\"Devuelve una lista paginada de libros\", function () {\r\n    const cuerpo = pm.response.json();\r\n    pm.expect(cuerpo).to.have.property(\"data\");\r\n    pm.expect(cuerpo.data).to.be.an(\"array\");\r\n    pm.expect(cuerpo).to.have.property(\"meta\");\r\n});"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "GET",
         "header": [],
@@ -93,12 +176,76 @@
           "path": [
             "libros"
           ]
-        }
+        },
+        "description": "Lista los libros con sus autores, paginados.\n\nRequiere token Bearer.\n\nFiltros opcionales (query params):\n\n- titulo: búsqueda parcial, sin distinguir mayúsculas.\n    \n- autor: nombre o apellido del autor.\n    \n- anio: año de publicación.\n    \n- disponibles: true para ver solo libros con stock.\n    \n- per_page: resultados por página (máximo 100).\n    \n\nRespuestas:\n\n- 200: lista paginada con meta.total.\n    \n- 401: sin token o token inválido."
       },
-      "response": []
+      "response": [
+        {
+          "name": "Listar libros",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/libros",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "libros"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Host",
+              "value": "127.0.0.1:8000"
+            },
+            {
+              "key": "Connection",
+              "value": "close"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "PHP/8.5.12"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, private"
+            },
+            {
+              "key": "Date",
+              "value": "Mon, 26 Oct 2026 20:18:41 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": [\n    {\n      \"id\": 9,\n      \"titulo\": \"Aut recusandae quia\",\n      \"isbn\": \"9789574465828\",\n      \"anio_publicacion\": 2016,\n      \"numero_paginas\": 302,\n      \"descripcion\": \"Natus optio esse dolore voluptatem quo et quibusdam. Eos atque error autem tenetur minus consectetur fuga illo.\",\n      \"stock_disponible\": 6,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 1,\n          \"nombre\": \"Domenica\",\n          \"apellido\": \"Blick\",\n          \"nombre_completo\": \"Domenica Blick\",\n          \"fecha_nacimiento\": \"1990-05-30\",\n          \"nacionalidad\": \"Española\",\n          \"biografia\": \"Eos omnis voluptatum inventore quasi. Tenetur unde aut est. Fuga cupiditate sit impedit quisquam ex ad.\",\n          \"orden_autor\": 1\n        },\n        {\n          \"id\": 8,\n          \"nombre\": \"Skylar\",\n          \"apellido\": \"Hilpert\",\n          \"nombre_completo\": \"Skylar Hilpert\",\n          \"fecha_nacimiento\": \"1941-01-14\",\n          \"nacionalidad\": \"Peruana\",\n          \"biografia\": \"Quis et explicabo suscipit nulla vel est. Provident harum occaecati voluptatem ab et cupiditate. Sint quos consequatur aut occaecati. Eaque quia inventore pariatur doloribus dolorem repellendus.\",\n          \"orden_autor\": 2\n        },\n        {\n          \"id\": 10,\n          \"nombre\": \"Constantin\",\n          \"apellido\": \"Lubowitz\",\n          \"nombre_completo\": \"Constantin Lubowitz\",\n          \"fecha_nacimiento\": \"1956-04-11\",\n          \"nacionalidad\": \"Mexicana\",\n          \"biografia\": \"Optio quidem quisquam reiciendis autem. Illum quibusdam consequatur voluptatem necessitatibus cumque sit. Ipsam eum voluptas quisquam qui quaerat quasi inventore.\",\n          \"orden_autor\": 3\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 21,\n      \"titulo\": \"Cien años de soledad\",\n      \"isbn\": \"978-0-06-088328-7\",\n      \"anio_publicacion\": 1967,\n      \"numero_paginas\": 471,\n      \"descripcion\": \"Novela de realismo mágico.\",\n      \"stock_disponible\": 5,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 1,\n          \"nombre\": \"Domenica\",\n          \"apellido\": \"Blick\",\n          \"nombre_completo\": \"Domenica Blick\",\n          \"fecha_nacimiento\": \"1990-05-30\",\n          \"nacionalidad\": \"Española\",\n          \"biografia\": \"Eos omnis voluptatum inventore quasi. Tenetur unde aut est. Fuga cupiditate sit impedit quisquam ex ad.\",\n          \"orden_autor\": 1\n        },\n        {\n          \"id\": 2,\n          \"nombre\": \"Damien\",\n          \"apellido\": \"Wuckert\",\n          \"nombre_completo\": \"Damien Wuckert\",\n          \"fecha_nacimiento\": \"1996-03-18\",\n          \"nacionalidad\": \"Argentina\",\n          \"biografia\": \"Aut et soluta maxime. Eum aut deserunt qui dolorem incidunt. Voluptate maxime corrupti facilis. Iure laudantium reprehenderit cupiditate rerum.\",\n          \"orden_autor\": 2\n        }\n      ],\n      \"creado_en\": \"2026-10-26T19:42:18+00:00\",\n      \"actualizado_en\": \"2026-10-26T19:42:18+00:00\"\n    },\n    {\n      \"id\": 3,\n      \"titulo\": \"Est aut error\",\n      \"isbn\": \"9794766580685\",\n      \"anio_publicacion\": 2005,\n      \"numero_paginas\": 262,\n      \"descripcion\": \"Quibusdam id voluptas quo. Fugiat dolorem hic laudantium ut rerum aut. Omnis in magni doloremque dignissimos sunt quasi ipsum.\",\n      \"stock_disponible\": 6,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 4,\n          \"nombre\": \"Turner\",\n          \"apellido\": \"Reilly\",\n          \"nombre_completo\": \"Turner Reilly\",\n          \"fecha_nacimiento\": \"1953-05-08\",\n          \"nacionalidad\": \"Española\",\n          \"biografia\": \"Ea non quasi est quisquam earum cupiditate aut. Ipsum reiciendis est eius et molestiae accusantium eaque.\",\n          \"orden_autor\": 1\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 8,\n      \"titulo\": \"Est corporis nulla\",\n      \"isbn\": \"9787902770309\",\n      \"anio_publicacion\": 1965,\n      \"numero_paginas\": 578,\n      \"descripcion\": \"Deleniti possimus molestias voluptatibus quo ducimus ea. Blanditiis maiores sunt cum quasi cumque saepe cumque. Unde ut est officiis qui asperiores soluta.\",\n      \"stock_disponible\": 10,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 9,\n          \"nombre\": \"Shaun\",\n          \"apellido\": \"Dibbert\",\n          \"nombre_completo\": \"Shaun Dibbert\",\n          \"fecha_nacimiento\": \"1967-11-26\",\n          \"nacionalidad\": \"Venezolana\",\n          \"biografia\": \"Voluptatum dolore laboriosam ut consequatur saepe necessitatibus est. Itaque numquam ullam voluptas nostrum corporis autem quibusdam.\",\n          \"orden_autor\": 1\n        },\n        {\n          \"id\": 10,\n          \"nombre\": \"Constantin\",\n          \"apellido\": \"Lubowitz\",\n          \"nombre_completo\": \"Constantin Lubowitz\",\n          \"fecha_nacimiento\": \"1956-04-11\",\n          \"nacionalidad\": \"Mexicana\",\n          \"biografia\": \"Optio quidem quisquam reiciendis autem. Illum quibusdam consequatur voluptatem necessitatibus cumque sit. Ipsam eum voluptas quisquam qui quaerat quasi inventore.\",\n          \"orden_autor\": 2\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 5,\n      \"titulo\": \"Et omnis omnis\",\n      \"isbn\": \"9793660497983\",\n      \"anio_publicacion\": 2024,\n      \"numero_paginas\": 644,\n      \"descripcion\": \"Blanditiis asperiores natus nobis sit. Sint eos nulla sint animi adipisci unde. Deleniti est est enim nulla autem doloribus vitae.\",\n      \"stock_disponible\": 5,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 4,\n          \"nombre\": \"Turner\",\n          \"apellido\": \"Reilly\",\n          \"nombre_completo\": \"Turner Reilly\",\n          \"fecha_nacimiento\": \"1953-05-08\",\n          \"nacionalidad\": \"Española\",\n          \"biografia\": \"Ea non quasi est quisquam earum cupiditate aut. Ipsum reiciendis est eius et molestiae accusantium eaque.\",\n          \"orden_autor\": 1\n        },\n        {\n          \"id\": 5,\n          \"nombre\": \"Gardner\",\n          \"apellido\": \"Altenwerth\",\n          \"nombre_completo\": \"Gardner Altenwerth\",\n          \"fecha_nacimiento\": \"1941-01-22\",\n          \"nacionalidad\": \"Mexicana\",\n          \"biografia\": \"Eaque consequuntur dolorum rem. Maiores omnis iure delectus culpa sequi debitis autem. Repudiandae accusamus ipsa repellendus occaecati cupiditate id qui.\",\n          \"orden_autor\": 2\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 2,\n      \"titulo\": \"Et omnis voluptatem\",\n      \"isbn\": \"9785115377599\",\n      \"anio_publicacion\": 2001,\n      \"numero_paginas\": 616,\n      \"descripcion\": \"Aliquid assumenda esse autem illum ut. Accusantium aut odit modi ut qui repudiandae aut.\",\n      \"stock_disponible\": 5,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 7,\n          \"nombre\": \"Jaylen\",\n          \"apellido\": \"Predovic\",\n          \"nombre_completo\": \"Jaylen Predovic\",\n          \"fecha_nacimiento\": \"1941-07-23\",\n          \"nacionalidad\": \"Argentina\",\n          \"biografia\": \"Maxime sed et dolore aliquam ab nesciunt placeat. Id quaerat quo rerum numquam.\",\n          \"orden_autor\": 1\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T20:07:17+00:00\"\n    },\n    {\n      \"id\": 13,\n      \"titulo\": \"Et soluta quia\",\n      \"isbn\": \"9792962166597\",\n      \"anio_publicacion\": 2005,\n      \"numero_paginas\": 750,\n      \"descripcion\": \"Nihil praesentium ad omnis ea atque. Ut debitis nihil est esse dolore suscipit. Eos qui accusantium rerum voluptas exercitationem reiciendis cum ea.\",\n      \"stock_disponible\": 2,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 7,\n          \"nombre\": \"Jaylen\",\n          \"apellido\": \"Predovic\",\n          \"nombre_completo\": \"Jaylen Predovic\",\n          \"fecha_nacimiento\": \"1941-07-23\",\n          \"nacionalidad\": \"Argentina\",\n          \"biografia\": \"Maxime sed et dolore aliquam ab nesciunt placeat. Id quaerat quo rerum numquam.\",\n          \"orden_autor\": 1\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 19,\n      \"titulo\": \"Eum quia iusto\",\n      \"isbn\": \"9796390027956\",\n      \"anio_publicacion\": 2020,\n      \"numero_paginas\": 608,\n      \"descripcion\": \"Voluptatem consequatur ipsa numquam. Aliquid ex labore cupiditate sed sint placeat. Quam illum odio deserunt vitae pariatur.\",\n      \"stock_disponible\": 0,\n      \"esta_disponible\": false,\n      \"autores\": [\n        {\n          \"id\": 2,\n          \"nombre\": \"Damien\",\n          \"apellido\": \"Wuckert\",\n          \"nombre_completo\": \"Damien Wuckert\",\n          \"fecha_nacimiento\": \"1996-03-18\",\n          \"nacionalidad\": \"Argentina\",\n          \"biografia\": \"Aut et soluta maxime. Eum aut deserunt qui dolorem incidunt. Voluptate maxime corrupti facilis. Iure laudantium reprehenderit cupiditate rerum.\",\n          \"orden_autor\": 1\n        },\n        {\n          \"id\": 4,\n          \"nombre\": \"Turner\",\n          \"apellido\": \"Reilly\",\n          \"nombre_completo\": \"Turner Reilly\",\n          \"fecha_nacimiento\": \"1953-05-08\",\n          \"nacionalidad\": \"Española\",\n          \"biografia\": \"Ea non quasi est quisquam earum cupiditate aut. Ipsum reiciendis est eius et molestiae accusantium eaque.\",\n          \"orden_autor\": 2\n        },\n        {\n          \"id\": 7,\n          \"nombre\": \"Jaylen\",\n          \"apellido\": \"Predovic\",\n          \"nombre_completo\": \"Jaylen Predovic\",\n          \"fecha_nacimiento\": \"1941-07-23\",\n          \"nacionalidad\": \"Argentina\",\n          \"biografia\": \"Maxime sed et dolore aliquam ab nesciunt placeat. Id quaerat quo rerum numquam.\",\n          \"orden_autor\": 3\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 15,\n      \"titulo\": \"Laborum quo dolores\",\n      \"isbn\": \"9793104978610\",\n      \"anio_publicacion\": 2010,\n      \"numero_paginas\": 684,\n      \"descripcion\": \"Nam sint dignissimos rem omnis. Sequi voluptatum sequi totam.\",\n      \"stock_disponible\": 5,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 2,\n          \"nombre\": \"Damien\",\n          \"apellido\": \"Wuckert\",\n          \"nombre_completo\": \"Damien Wuckert\",\n          \"fecha_nacimiento\": \"1996-03-18\",\n          \"nacionalidad\": \"Argentina\",\n          \"biografia\": \"Aut et soluta maxime. Eum aut deserunt qui dolorem incidunt. Voluptate maxime corrupti facilis. Iure laudantium reprehenderit cupiditate rerum.\",\n          \"orden_autor\": 1\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 14,\n      \"titulo\": \"Modi velit doloremque\",\n      \"isbn\": \"9792247057541\",\n      \"anio_publicacion\": 1987,\n      \"numero_paginas\": 653,\n      \"descripcion\": \"Facilis eos atque rerum aut. Libero mollitia dolore asperiores hic corrupti aut.\",\n      \"stock_disponible\": 9,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 8,\n          \"nombre\": \"Skylar\",\n          \"apellido\": \"Hilpert\",\n          \"nombre_completo\": \"Skylar Hilpert\",\n          \"fecha_nacimiento\": \"1941-01-14\",\n          \"nacionalidad\": \"Peruana\",\n          \"biografia\": \"Quis et explicabo suscipit nulla vel est. Provident harum occaecati voluptatem ab et cupiditate. Sint quos consequatur aut occaecati. Eaque quia inventore pariatur doloribus dolorem repellendus.\",\n          \"orden_autor\": 1\n        },\n        {\n          \"id\": 9,\n          \"nombre\": \"Shaun\",\n          \"apellido\": \"Dibbert\",\n          \"nombre_completo\": \"Shaun Dibbert\",\n          \"fecha_nacimiento\": \"1967-11-26\",\n          \"nacionalidad\": \"Venezolana\",\n          \"biografia\": \"Voluptatum dolore laboriosam ut consequatur saepe necessitatibus est. Itaque numquam ullam voluptas nostrum corporis autem quibusdam.\",\n          \"orden_autor\": 2\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 6,\n      \"titulo\": \"Nisi at at\",\n      \"isbn\": \"9797564752872\",\n      \"anio_publicacion\": 1999,\n      \"numero_paginas\": 207,\n      \"descripcion\": \"Facilis iure omnis ut sint delectus. Impedit est rerum beatae ratione sequi labore et libero.\",\n      \"stock_disponible\": 3,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 3,\n          \"nombre\": \"Esperanza\",\n          \"apellido\": \"Bode\",\n          \"nombre_completo\": \"Esperanza Bode\",\n          \"fecha_nacimiento\": \"1950-03-29\",\n          \"nacionalidad\": \"Uruguaya\",\n          \"biografia\": \"Eum accusamus tempora voluptatibus consequatur quo. Tenetur aliquam placeat alias iste. Mollitia maiores at quo qui.\",\n          \"orden_autor\": 1\n        },\n        {\n          \"id\": 7,\n          \"nombre\": \"Jaylen\",\n          \"apellido\": \"Predovic\",\n          \"nombre_completo\": \"Jaylen Predovic\",\n          \"fecha_nacimiento\": \"1941-07-23\",\n          \"nacionalidad\": \"Argentina\",\n          \"biografia\": \"Maxime sed et dolore aliquam ab nesciunt placeat. Id quaerat quo rerum numquam.\",\n          \"orden_autor\": 2\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 4,\n      \"titulo\": \"Nulla voluptatem occaecati\",\n      \"isbn\": \"9795700135534\",\n      \"anio_publicacion\": 1957,\n      \"numero_paginas\": 794,\n      \"descripcion\": \"Fugit omnis animi omnis aut quo. Aut repellat fugit totam maiores a odio eligendi.\",\n      \"stock_disponible\": 7,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 2,\n          \"nombre\": \"Damien\",\n          \"apellido\": \"Wuckert\",\n          \"nombre_completo\": \"Damien Wuckert\",\n          \"fecha_nacimiento\": \"1996-03-18\",\n          \"nacionalidad\": \"Argentina\",\n          \"biografia\": \"Aut et soluta maxime. Eum aut deserunt qui dolorem incidunt. Voluptate maxime corrupti facilis. Iure laudantium reprehenderit cupiditate rerum.\",\n          \"orden_autor\": 1\n        },\n        {\n          \"id\": 3,\n          \"nombre\": \"Esperanza\",\n          \"apellido\": \"Bode\",\n          \"nombre_completo\": \"Esperanza Bode\",\n          \"fecha_nacimiento\": \"1950-03-29\",\n          \"nacionalidad\": \"Uruguaya\",\n          \"biografia\": \"Eum accusamus tempora voluptatibus consequatur quo. Tenetur aliquam placeat alias iste. Mollitia maiores at quo qui.\",\n          \"orden_autor\": 2\n        },\n        {\n          \"id\": 6,\n          \"nombre\": \"Garret\",\n          \"apellido\": \"Wyman\",\n          \"nombre_completo\": \"Garret Wyman\",\n          \"fecha_nacimiento\": \"1976-03-07\",\n          \"nacionalidad\": \"Mexicana\",\n          \"biografia\": \"Qui qui repellendus ab et. Nihil recusandae autem ea voluptas et repellendus quo. Unde natus et dolores blanditiis omnis tenetur.\",\n          \"orden_autor\": 3\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 7,\n      \"titulo\": \"Numquam quia laboriosam\",\n      \"isbn\": \"9794451896619\",\n      \"anio_publicacion\": 1957,\n      \"numero_paginas\": 236,\n      \"descripcion\": \"Modi expedita ex porro ullam. Nemo accusantium non aut voluptas.\",\n      \"stock_disponible\": 2,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 5,\n          \"nombre\": \"Gardner\",\n          \"apellido\": \"Altenwerth\",\n          \"nombre_completo\": \"Gardner Altenwerth\",\n          \"fecha_nacimiento\": \"1941-01-22\",\n          \"nacionalidad\": \"Mexicana\",\n          \"biografia\": \"Eaque consequuntur dolorum rem. Maiores omnis iure delectus culpa sequi debitis autem. Repudiandae accusamus ipsa repellendus occaecati cupiditate id qui.\",\n          \"orden_autor\": 1\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 16,\n      \"titulo\": \"Omnis tenetur voluptas\",\n      \"isbn\": \"9798676228378\",\n      \"anio_publicacion\": 1955,\n      \"numero_paginas\": 500,\n      \"descripcion\": \"Voluptatem sapiente eum reprehenderit esse repudiandae minus. Sequi sit error et non ut.\",\n      \"stock_disponible\": 5,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 4,\n          \"nombre\": \"Turner\",\n          \"apellido\": \"Reilly\",\n          \"nombre_completo\": \"Turner Reilly\",\n          \"fecha_nacimiento\": \"1953-05-08\",\n          \"nacionalidad\": \"Española\",\n          \"biografia\": \"Ea non quasi est quisquam earum cupiditate aut. Ipsum reiciendis est eius et molestiae accusantium eaque.\",\n          \"orden_autor\": 1\n        },\n        {\n          \"id\": 6,\n          \"nombre\": \"Garret\",\n          \"apellido\": \"Wyman\",\n          \"nombre_completo\": \"Garret Wyman\",\n          \"fecha_nacimiento\": \"1976-03-07\",\n          \"nacionalidad\": \"Mexicana\",\n          \"biografia\": \"Qui qui repellendus ab et. Nihil recusandae autem ea voluptas et repellendus quo. Unde natus et dolores blanditiis omnis tenetur.\",\n          \"orden_autor\": 2\n        },\n        {\n          \"id\": 7,\n          \"nombre\": \"Jaylen\",\n          \"apellido\": \"Predovic\",\n          \"nombre_completo\": \"Jaylen Predovic\",\n          \"fecha_nacimiento\": \"1941-07-23\",\n          \"nacionalidad\": \"Argentina\",\n          \"biografia\": \"Maxime sed et dolore aliquam ab nesciunt placeat. Id quaerat quo rerum numquam.\",\n          \"orden_autor\": 3\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    },\n    {\n      \"id\": 12,\n      \"titulo\": \"Qui est debitis\",\n      \"isbn\": \"9792661827904\",\n      \"anio_publicacion\": 1987,\n      \"numero_paginas\": 391,\n      \"descripcion\": \"Sed voluptatibus quibusdam quod autem dicta voluptatem. Alias dolorem consectetur id numquam aut. Fugit officia dolore ut animi cumque.\",\n      \"stock_disponible\": 8,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 6,\n          \"nombre\": \"Garret\",\n          \"apellido\": \"Wyman\",\n          \"nombre_completo\": \"Garret Wyman\",\n          \"fecha_nacimiento\": \"1976-03-07\",\n          \"nacionalidad\": \"Mexicana\",\n          \"biografia\": \"Qui qui repellendus ab et. Nihil recusandae autem ea voluptas et repellendus quo. Unde natus et dolores blanditiis omnis tenetur.\",\n          \"orden_autor\": 1\n        }\n      ],\n      \"creado_en\": \"2026-10-26T17:51:03+00:00\",\n      \"actualizado_en\": \"2026-10-26T17:51:03+00:00\"\n    }\n  ],\n  \"links\": {\n    \"first\": \"http://127.0.0.1:8000/api/libros?page=1\",\n    \"last\": \"http://127.0.0.1:8000/api/libros?page=2\",\n    \"prev\": null,\n    \"next\": \"http://127.0.0.1:8000/api/libros?page=2\"\n  },\n  \"meta\": {\n    \"current_page\": 1,\n    \"from\": 1,\n    \"last_page\": 2,\n    \"links\": [\n      {\n        \"url\": null,\n        \"label\": \"&laquo; Previous\",\n        \"page\": null,\n        \"active\": false\n      },\n      {\n        \"url\": \"http://127.0.0.1:8000/api/libros?page=1\",\n        \"label\": \"1\",\n        \"page\": 1,\n        \"active\": true\n      },\n      {\n        \"url\": \"http://127.0.0.1:8000/api/libros?page=2\",\n        \"label\": \"2\",\n        \"page\": 2,\n        \"active\": false\n      },\n      {\n        \"url\": \"http://127.0.0.1:8000/api/libros?page=2\",\n        \"label\": \"Next &raquo;\",\n        \"page\": 2,\n        \"active\": false\n      }\n    ],\n    \"path\": \"http://127.0.0.1:8000/api/libros\",\n    \"per_page\": 15,\n    \"to\": 15,\n    \"total\": 21\n  }\n}"
+        }
+      ]
     },
     {
       "name": "Listar libros error",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Sin token responde 401\", function () {\r\n    pm.response.to.have.status(401);\r\n});\r\n\r\npm.test(\"El mensaje pide un token válido\", function () {\r\n    const cuerpo = pm.response.json();\r\n    pm.expect(cuerpo.message).to.include(\"token\");\r\n});"
+            ]
+          }
+        }
+      ],
       "request": {
         "auth": {
           "type": "noauth"
@@ -113,7 +260,8 @@
           "path": [
             "libros"
           ]
-        }
+        },
+        "description": "Caso de error: consulta sin token.  \nRespuesta esperada: 401 en JSON (no redirección), gracias al manejo de excepciones de la API."
       },
       "response": []
     },
@@ -144,18 +292,30 @@
               "value": "5"
             }
           ]
-        }
+        },
+        "description": "Ejemplo de uso combinado de filtros: titulo, autor, anio y disponibles.  \nRespuesta esperada: 200 con la lista paginada filtrada."
       },
       "response": []
     },
     {
       "name": "Crear Libro",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Crear libro responde 201 Created\", function () {\r\n    pm.response.to.have.status(201);\r\n});\r\n\r\npm.test(\"Devuelve el libro con sus autores\", function () {\r\n    const cuerpo = pm.response.json();\r\n    pm.expect(cuerpo.data).to.have.property(\"id\");\r\n    pm.expect(cuerpo.data.autores).to.be.an(\"array\").that.is.not.empty;\r\n});"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"titulo\": \"Cien años de soledad\",\r\n    \"isbn\": \"978-0-06-088328-7\",\r\n    \"anio_publicacion\": 1967,\r\n    \"numero_paginas\": 471,\r\n    \"descripcion\": \"Novela de realismo mágico.\",\r\n    \"stock_disponible\": 5,\r\n    \"autores\": [1, 2]\r\n}",
+          "raw": "{\r\n    \"titulo\": \"the punisher\",\r\n    \"isbn\": \"978-0-06-009876-1\",\r\n    \"anio_publicacion\": 2026,\r\n    \"numero_paginas\": 1000,\r\n    \"descripcion\": \"Una serie.\",\r\n    \"stock_disponible\": 3,\r\n    \"autores\": [1]\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -170,9 +330,71 @@
           "path": [
             "libros"
           ]
-        }
+        },
+        "description": "Crea un libro y lo asocia a uno o más autores.\n\nRequiere token Bearer.\n\nBody (JSON): titulo, isbn (único), anio_publicacion, stock y autores  \n(lista de IDs; el orden define orden_autor).\n\nTodo se guarda en una transacción: si algo falla, no se crea nada.\n\nRespuestas:\n\n- 201: libro creado, con sus autores.\n    \n- 401: sin token o token inválido.\n    \n- 422: datos inválidos (ISBN repetido, campos faltantes, autor inexistente)."
       },
-      "response": []
+      "response": [
+        {
+          "name": "Crear Libro",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"titulo\": \"the punisher\",\r\n    \"isbn\": \"978-0-06-009876-1\",\r\n    \"anio_publicacion\": 2026,\r\n    \"numero_paginas\": 1000,\r\n    \"descripcion\": \"Una serie.\",\r\n    \"stock_disponible\": 3,\r\n    \"autores\": [1]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/libros",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "libros"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Host",
+              "value": "127.0.0.1:8000"
+            },
+            {
+              "key": "Connection",
+              "value": "close"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "PHP/8.5.12"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, private"
+            },
+            {
+              "key": "Date",
+              "value": "Mon, 26 Oct 2026 23:51:15 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": {\n    \"id\": 24,\n    \"titulo\": \"the punisher\",\n    \"isbn\": \"978-0-06-009876-1\",\n    \"anio_publicacion\": 2026,\n    \"numero_paginas\": 1000,\n    \"descripcion\": \"Una serie.\",\n    \"stock_disponible\": 3,\n    \"esta_disponible\": true,\n    \"autores\": [\n      {\n        \"id\": 1,\n        \"nombre\": \"Domenica\",\n        \"apellido\": \"Blick\",\n        \"nombre_completo\": \"Domenica Blick\",\n        \"fecha_nacimiento\": \"1990-05-30\",\n        \"nacionalidad\": \"Española\",\n        \"biografia\": \"Eos omnis voluptatum inventore quasi. Tenetur unde aut est. Fuga cupiditate sit impedit quisquam ex ad.\",\n        \"orden_autor\": 1\n      }\n    ],\n    \"creado_en\": \"2026-10-26T23:51:15+00:00\",\n    \"actualizado_en\": \"2026-10-26T23:51:15+00:00\"\n  },\n  \"message\": \"Libro creado correctamente.\"\n}"
+        }
+      ]
     },
     {
       "name": "Crear Libro sin enviar",
@@ -196,7 +418,8 @@
           "path": [
             "libros"
           ]
-        }
+        },
+        "description": "Caso de error: se envía el body vacío.  \nRespuesta esperada: 422 con el detalle de los campos obligatorios que faltan."
       },
       "response": []
     },
@@ -214,7 +437,8 @@
             "libros",
             "22"
           ]
-        }
+        },
+        "description": "Muestra un libro por su ID, con sus autores en orden.\n\nRequiere token Bearer.\n\nRespuestas:\n\n- 200: datos del libro y sus autores.\n    \n- 401: sin token o token inválido.\n    \n- 404: el libro no existe o fue eliminado (soft delete)."
       },
       "response": []
     },
@@ -241,7 +465,8 @@
             "libros",
             "22"
           ]
-        }
+        },
+        "description": "Actualiza un libro completo (PUT) y re-sincroniza sus autores.\n\nRequiere token Bearer.\n\nBody (JSON): los mismos campos que al crear: titulo, isbn, anio_publicacion,  \nstock y autores. Todos son obligatorios.\n\nEl ISBN puede ser el del propio libro, pero no el de otro.\n\nRespuestas:\n\n- 200: libro actualizado.\n    \n- 401: sin token o token inválido.\n    \n- 404: el libro no existe.\n    \n- 422: datos inválidos (ISBN de otro libro, campos faltantes)."
       },
       "response": []
     },
@@ -259,7 +484,8 @@
             "libros",
             "22"
           ]
-        }
+        },
+        "description": "Elimina un libro con soft delete: el registro queda en la base de datos  \ncon deleted_at y deja de aparecer en listados y consultas.\n\nRequiere token Bearer.\n\nRespuestas:\n\n- 200: libro eliminado.\n    \n- 401: sin token o token inválido.\n    \n- 404: el libro no existe o ya estaba eliminado."
       },
       "response": []
     },
@@ -276,7 +502,8 @@
           "path": [
             "prestamos"
           ]
-        }
+        },
+        "description": "Lista los préstamos con el libro y el usuario asociados, paginados.\n\nRequiere token Bearer.\n\nFiltros opcionales (query params):\n\n- estado: activo, devuelto o vencido.\n    \n- user_id: ID del usuario.\n    \n\nRespuestas:\n\n- 200: lista paginada de préstamos.\n    \n- 401: sin token o token inválido."
       },
       "response": []
     },
@@ -287,7 +514,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"libro_id\": 19,\r\n    \"user_id\": 15\r\n}",
+          "raw": "{\r\n    \"libro_id\": 24,\r\n    \"user_id\": 15\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -302,9 +529,131 @@
           "path": [
             "prestamos"
           ]
-        }
+        },
+        "description": "Registra un préstamo y descuenta una unidad del stock del libro.\n\nRequiere token Bearer.\n\nBody (JSON): libro_id y user_id.\n\nReglas de negocio (se validan dentro de una transacción con bloqueo de fila):\n\n- El usuario debe estar activo.\n    \n- El libro debe tener stock disponible.\n    \n- Un usuario no puede tener más de 3 préstamos sin devolver.\n    \n\nRespuestas:\n\n- 201: préstamo creado.\n    \n- 401: sin token o token inválido.\n    \n- 422: regla de negocio incumplida (sin stock, límite de 3, usuario inactivo)  \n    o datos inválidos."
       },
-      "response": []
+      "response": [
+        {
+          "name": "Crear préstamo 422",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"libro_id\": 19,\r\n    \"user_id\": 15\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/prestamos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ]
+            }
+          },
+          "status": "Unprocessable Content",
+          "code": 422,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Host",
+              "value": "127.0.0.1:8000"
+            },
+            {
+              "key": "Connection",
+              "value": "close"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "PHP/8.5.12"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, private"
+            },
+            {
+              "key": "Date",
+              "value": "Mon, 26 Oct 2026 20:03:30 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"message\": \"No hay stock disponible para este libro.\",\n  \"errors\": {\n    \"libro_id\": [\n      \"No hay stock disponible para este libro.\"\n    ]\n  }\n}"
+        },
+        {
+          "name": "Crear préstamo 201",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"libro_id\": 24,\r\n    \"user_id\": 15\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/prestamos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Host",
+              "value": "127.0.0.1:8000"
+            },
+            {
+              "key": "Connection",
+              "value": "close"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "PHP/8.5.12"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, private"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 27 Oct 2026 00:14:43 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": {\n    \"id\": 21,\n    \"estado\": \"activo\",\n    \"fecha_prestamo\": \"2026-10-27\",\n    \"fecha_devolucion_estimada\": \"2026-11-11\",\n    \"fecha_devolucion_real\": null,\n    \"libro\": {\n      \"id\": 24,\n      \"titulo\": \"the punisher\",\n      \"isbn\": \"978-0-06-009876-1\",\n      \"anio_publicacion\": 2026,\n      \"numero_paginas\": 1000,\n      \"descripcion\": \"Una serie.\",\n      \"stock_disponible\": 2,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 1,\n          \"nombre\": \"Domenica\",\n          \"apellido\": \"Blick\",\n          \"nombre_completo\": \"Domenica Blick\",\n          \"fecha_nacimiento\": \"1990-05-30\",\n          \"nacionalidad\": \"Española\",\n          \"biografia\": \"Eos omnis voluptatum inventore quasi. Tenetur unde aut est. Fuga cupiditate sit impedit quisquam ex ad.\",\n          \"orden_autor\": 1\n        }\n      ],\n      \"creado_en\": \"2026-10-26T23:51:15+00:00\",\n      \"actualizado_en\": \"2026-10-27T00:14:43+00:00\"\n    },\n    \"usuario\": {\n      \"id\": 15,\n      \"nombre\": \"Kiel Turner\",\n      \"email\": \"augustine29@example.net\",\n      \"telefono\": \"3079029905\",\n      \"fecha_registro\": \"2025-02-16\",\n      \"estado\": \"activo\"\n    },\n    \"creado_en\": \"2026-10-27T00:14:43+00:00\"\n  },\n  \"message\": \"Préstamo creado correctamente.\"\n}"
+        }
+      ]
     },
     {
       "name": "Crear préstamo - límite 3",
@@ -328,18 +677,30 @@
           "path": [
             "prestamos"
           ]
-        }
+        },
+        "description": "Caso de error: el usuario ya tiene 3 préstamos sin devolver.  \nRespuesta esperada: 422 indicando el límite máximo."
       },
       "response": []
     },
     {
       "name": "Crear préstamo - sin stock",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Sin stock responde 422\", function () {\r\n    pm.response.to.have.status(422);\r\n});\r\n\r\npm.test(\"El error indica que no hay stock\", function () {\r\n    const cuerpo = pm.response.json();\r\n    pm.expect(cuerpo.errors).to.have.property(\"libro_id\");\r\n    pm.expect(cuerpo.errors.libro_id[0]).to.include(\"stock\");\r\n});"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "POST",
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n    \"libro_id\": 1,\r\n    \"user_id\": 15\r\n}",
+          "raw": "{\r\n    \"libro_id\": 19,\r\n    \"user_id\": 15\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -354,28 +715,95 @@
           "path": [
             "prestamos"
           ]
-        }
+        },
+        "description": "Caso de error: el libro no tiene stock disponible.  \nRespuesta esperada: 422 indicando que no hay ejemplares."
       },
       "response": []
     },
     {
       "name": "Devolver Prestamo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Devolver responde 200 o 422 si ya fue devuelto\", function () {\r\n    pm.expect(pm.response.code).to.be.oneOf([200, 422]);\r\n});\r\n\r\npm.test(\"La respuesta incluye un mensaje\", function () {\r\n    const cuerpo = pm.response.json();\r\n    pm.expect(cuerpo).to.have.property(\"message\");\r\n});"
+            ]
+          }
+        }
+      ],
       "request": {
         "method": "PUT",
         "header": [],
         "url": {
-          "raw": "{{base_url}}/prestamos/11/devolver",
+          "raw": "{{base_url}}/prestamos/21/devolver",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "prestamos",
-            "11",
+            "21",
             "devolver"
           ]
-        }
+        },
+        "description": "Marca un préstamo como devuelto y suma una unidad al stock del libro.\n\nRequiere token Bearer.\n\nRespuestas:\n\n- 200: préstamo devuelto, con fecha de devolución.\n    \n- 401: sin token o token inválido.\n    \n- 404: el préstamo no existe.\n    \n- 422: el préstamo ya estaba devuelto."
       },
-      "response": []
+      "response": [
+        {
+          "name": "Devolver Prestamo",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/21/devolver",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos",
+                "21",
+                "devolver"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Host",
+              "value": "127.0.0.1:8000"
+            },
+            {
+              "key": "Connection",
+              "value": "close"
+            },
+            {
+              "key": "X-Powered-By",
+              "value": "PHP/8.5.12"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, private"
+            },
+            {
+              "key": "Date",
+              "value": "Tue, 27 Oct 2026 00:17:39 GMT"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": {\n    \"id\": 21,\n    \"estado\": \"devuelto\",\n    \"fecha_prestamo\": \"2026-10-27\",\n    \"fecha_devolucion_estimada\": \"2026-11-11\",\n    \"fecha_devolucion_real\": \"2026-10-27\",\n    \"libro\": {\n      \"id\": 24,\n      \"titulo\": \"the punisher\",\n      \"isbn\": \"978-0-06-009876-1\",\n      \"anio_publicacion\": 2026,\n      \"numero_paginas\": 1000,\n      \"descripcion\": \"Una serie.\",\n      \"stock_disponible\": 3,\n      \"esta_disponible\": true,\n      \"autores\": [\n        {\n          \"id\": 1,\n          \"nombre\": \"Domenica\",\n          \"apellido\": \"Blick\",\n          \"nombre_completo\": \"Domenica Blick\",\n          \"fecha_nacimiento\": \"1990-05-30\",\n          \"nacionalidad\": \"Española\",\n          \"biografia\": \"Eos omnis voluptatum inventore quasi. Tenetur unde aut est. Fuga cupiditate sit impedit quisquam ex ad.\",\n          \"orden_autor\": 1\n        }\n      ],\n      \"creado_en\": \"2026-10-26T23:51:15+00:00\",\n      \"actualizado_en\": \"2026-10-27T00:17:39+00:00\"\n    },\n    \"usuario\": {\n      \"id\": 15,\n      \"nombre\": \"Kiel Turner\",\n      \"email\": \"augustine29@example.net\",\n      \"telefono\": \"3079029905\",\n      \"fecha_registro\": \"2025-02-16\",\n      \"estado\": \"activo\"\n    },\n    \"creado_en\": \"2026-10-27T00:14:43+00:00\"\n  },\n  \"message\": \"Préstamo devuelto correctamente.\"\n}"
+        }
+      ]
     }
   ],
   "auth": {
